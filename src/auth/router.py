@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends,status
 from fastapi.exceptions import HTTPException
 from src.auth.service import UserService
-from src.auth.scheme import createuserdata, user
+from datetime import timedelta
+from src.auth.scheme import createuserdata,logindata, user
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
+from src.auth.utils import verify_password_hash,create_access_token,decode_token
+from fastapi.responses import JSONResponse
 
 auth_router = APIRouter()
 userservice = UserService()
@@ -17,3 +20,44 @@ async def create_new_user(userdata:createuserdata, session:AsyncSession = Depend
                             detail="user already exits")
     user_data =  await userservice.create_user(userdata,session)
     return user_data
+
+# login 
+@auth_router.post("/login")
+async def login_users(login_data:logindata,session:AsyncSession = Depends(get_session)):
+    email = login_data.email
+    password = login_data.password
+
+    user = await userservice.get_user_by_email(email,session)
+    if user is not None:
+        is_password_valid= verify_password_hash(password,user.password_hash)
+
+        if is_password_valid:
+            access_token = create_access_token(userdata = {
+                "email":email,
+                "user_uid":str(user.uid)
+            })
+
+            refresh_token = create_access_token(userdata = {
+                "email":email,
+                "user_uid":str(user.uid)
+            },
+            refresh=True,
+            expiry=timedelta(days =1))
+
+
+            return JSONResponse(
+                content = {
+                    "message":"login_successful",
+                    "access_token":access_token,
+                    "refresh_token":refresh_token,
+                    "user":{"email":user.email,"uid":str(user.uid)}
+                }
+            )
+        
+    raise HTTPException(
+        status_code = status.HTTP_403_FORBIDDEN,
+        detail = "invalid email or password"
+    )
+        
+
+

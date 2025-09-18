@@ -17,3 +17,6 @@ class createuserdata(BaseModel):
     email:str=Field(max_length=25)
     password:str=Field(min_length=8)
    
+class logindata(BaseModel):
+    email:str=Field(max_length=25)
+    password:str=Field(min_length=8)
