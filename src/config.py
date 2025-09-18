@@ -10,4 +10,3 @@ class settings(BaseSettings):
 
 # create the object
 Config = settings()
-print(Config.DATABASE_URL)
