@@ -5,7 +5,7 @@ import sqlalchemy.dialects.postgresql as pg
 from datetime import datetime
 import uuid
 
-class user(SQLModel,table=True):
+class User(SQLModel,table=True):
     __tablename__= "user_accounts"
 
     uid:uuid.UUID=Field(
@@ -20,6 +20,8 @@ class user(SQLModel,table=True):
     firstname:str
     lastname:str
     email:str
-    password_hash:str
+    password_hash:str=Field(exclude=True)
     created_at:datetime = Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
 
+    def __repr__(self,):
+        return f"<User {self.username}>"
