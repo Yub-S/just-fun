@@ -7,11 +7,14 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.auth.utils import verify_password_hash,create_access_token,decode_token
 from fastapi.responses import JSONResponse
-from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer
+from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer, get_current_user
 from src.db.redis import add_jti_to_blocklist
+from src.auth.dependency import RoleChecker
 
 auth_router = APIRouter()
 userservice = UserService()
+
+role_checker = RoleChecker(["admin", "user"])
 
 # signup
 @auth_router.post("/signup", response_model = user, status_code = status.HTTP_201_CREATED)
@@ -82,3 +85,7 @@ async def revoke_token(token_details:dict=Depends(accesstokenbearer())):
     await add_jti_to_blocklist(jti)
 
     return JSONResponse(content={"message":"logout succesfully"}, status_code=status.HTTP_200_OK)
+
+@auth_router.get("/me")
+async def get_current_user(user=Depends(get_current_user), _:bool=Depends(role_checker)):
+    return user

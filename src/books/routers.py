@@ -7,19 +7,23 @@ from .books_data import books
 from src.books.service import BookService
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
-from src.auth.dependency import accesstokenbearer 
+from src.auth.dependency import accesstokenbearer , RoleChecker
 
 book_router = APIRouter()
 book_service = BookService()
 accesstokenbearer = accesstokenbearer()
+role_checker= RoleChecker(["admin"])
 
+# dependencies can be kept in the function below the router or within the routers
+# in router -> dependencies=[list of dependencies] and in function Depends()
+# as a role based access lets simply implement that only admin can upload the books contents not users
 
 @book_router.get("/",response_model=List[book])
 async def get_all_books(session:AsyncSession=Depends(get_session),token_details=Depends(accesstokenbearer)):
     books = await book_service.get_all_books(session)
     return books
 
-@book_router.post("/", status_code=status.HTTP_201_CREATED,response_model=book)
+@book_router.post("/", status_code=status.HTTP_201_CREATED,response_model=book, dependencies=[Depends(role_checker)])
 async def create_a_book(bookdata:createbook,session:AsyncSession=Depends(get_session),token_details=Depends(accesstokenbearer))->dict:
     new_book = await book_service.create_a_book(bookdata,session)
     return new_book
