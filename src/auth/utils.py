@@ -35,9 +35,9 @@ def decode_token(token)->dict:
         token_data = jwt.decode(
             jwt=token,
             key=Config.JWT_KEY,
-            algorithm=Config.JWT_ALGORITHM
+            algorithms=Config.JWT_ALGORITHM
         )
         return token_data
-    except jwt.PYJWTError as jwte:
+    except jwt.PyJWTError as jwte:
         logging.exception(jwte)
         return None
