@@ -8,10 +8,12 @@ from src.db.main import get_session
 from src.auth.utils import verify_password_hash,create_access_token,decode_token
 from fastapi.responses import JSONResponse
 from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer
+from src.db.redis import add_jti_to_blocklist
 
 auth_router = APIRouter()
 userservice = UserService()
 
+# signup
 @auth_router.post("/signup", response_model = user, status_code = status.HTTP_201_CREATED)
 async def create_new_user(userdata:createuserdata, session:AsyncSession = Depends(get_session)):
     email = userdata.email
@@ -71,3 +73,12 @@ async def get_new_access_token(token_details:dict=Depends(refreshtokenbearer()))
     raise HTTPException(
         status_code = status.HTTP_400_BAD_REQUEST, details = "invalid or expired token"
     )
+
+
+@auth_router.get("/logout")
+async def revoke_token(token_details:dict=Depends(accesstokenbearer())):
+    jti = token_details["jti"]
+
+    await add_jti_to_blocklist(jti)
+
+    return JSONResponse(content={"message":"logout succesfully"}, status_code=status.HTTP_200_OK)
