@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends,status
 from fastapi.exceptions import HTTPException
 from src.auth.service import UserService
 from datetime import timedelta, datetime
-from src.auth.scheme import createuserdata,logindata, user
+from src.auth.scheme import createuserdata,logindata, user, UserBookModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.auth.utils import verify_password_hash,create_access_token,decode_token
@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer, get_current_user
 from src.db.redis import add_jti_to_blocklist
 from src.auth.dependency import RoleChecker
+
 
 auth_router = APIRouter()
 userservice = UserService()
@@ -86,6 +87,6 @@ async def revoke_token(token_details:dict=Depends(accesstokenbearer())):
 
     return JSONResponse(content={"message":"logout succesfully"}, status_code=status.HTTP_200_OK)
 
-@auth_router.get("/me")
+@auth_router.get("/me", response_model=UserBookModel)
 async def get_current_user(user=Depends(get_current_user), _:bool=Depends(role_checker)):
     return user
