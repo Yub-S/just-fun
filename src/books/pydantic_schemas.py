@@ -8,6 +8,7 @@ class book(BaseModel):
     publisher:str
     published_date:str
     page_count:int
+    user_uid:str
     language:str
     
 

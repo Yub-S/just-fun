@@ -22,12 +22,13 @@ class BookService:
         book= result.first()
         return book if book is not None else None
     
-    async def create_a_book(self, book_data:createbook, session:AsyncSession):
+    async def create_a_book(self, book_data:createbook,user_uid:str, session:AsyncSession):
 
         book_data_dict = book_data.model_dump()
         new_book = Book(
             **book_data_dict
         )
+        new_book.user_uid=user_uid
 
         session.add(new_book)
 

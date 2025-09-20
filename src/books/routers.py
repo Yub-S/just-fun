@@ -12,7 +12,7 @@ from src.auth.dependency import accesstokenbearer , RoleChecker
 book_router = APIRouter()
 book_service = BookService()
 accesstokenbearer = accesstokenbearer()
-role_checker= RoleChecker(["admin"])
+role_checker= RoleChecker(["admin", "user"])
 
 # dependencies can be kept in the function below the router or within the routers
 # in router -> dependencies=[list of dependencies] and in function Depends()
@@ -25,7 +25,8 @@ async def get_all_books(session:AsyncSession=Depends(get_session),token_details=
 
 @book_router.post("/", status_code=status.HTTP_201_CREATED,response_model=book, dependencies=[Depends(role_checker)])
 async def create_a_book(bookdata:createbook,session:AsyncSession=Depends(get_session),token_details=Depends(accesstokenbearer))->dict:
-    new_book = await book_service.create_a_book(bookdata,session)
+    user_uid = token_details["user"]["user_uid"]
+    new_book = await book_service.create_a_book(bookdata,user_uid,session)
     return new_book
 
 @book_router.get("/{book_uid}",response_model=book)
