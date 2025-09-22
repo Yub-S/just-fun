@@ -4,6 +4,7 @@ from src.auth.router import auth_router
 from src.review.router import review_router
 from contextlib import asynccontextmanager
 from .db.main import init_db
+from src.middleware import register_middleware
 
 @asynccontextmanager
 async def life_span(app:FastAPI):
@@ -19,6 +20,8 @@ app = FastAPI(
     version=version,
     #lifespan=life_span,
 )
+
+register_middleware(app)
 
 app.include_router(book_router,prefix=f"/api/{version}/books", tags=["books"])
 app.include_router(auth_router,prefix=f"/api/{version}/auth", tags=["auth"])
