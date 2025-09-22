@@ -18,19 +18,19 @@ role_checker= RoleChecker(["admin", "user"])
 # in router -> dependencies=[list of dependencies] and in function Depends()
 # as a role based access lets simply implement that only admin can upload the books contents not users
 
-@book_router.get("/",response_model=List[book])
+@book_router.get("/")
 async def get_all_books(session:AsyncSession=Depends(get_session),token_details=Depends(accesstokenbearer)):
     books = await book_service.get_all_books(session)
     return books
 
-@book_router.post("/", status_code=status.HTTP_201_CREATED,response_model=book, dependencies=[Depends(role_checker)])
+@book_router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(role_checker)])
 async def create_a_book(bookdata:createbook,session:AsyncSession=Depends(get_session),token_details=Depends(accesstokenbearer))->dict:
     user_uid = token_details["user"]["user_uid"]
     new_book = await book_service.create_a_book(bookdata,user_uid,session)
     return new_book
 
-@book_router.get("/{book_uid}",response_model=book)
-async def get_a_single_book(book_uid:str,session:AsyncSession=Depends(get_session), token_details=Depends(accesstokenbearer))->dict:
+@book_router.get("/{book_uid}")
+async def get_a_single_book(book_uid:str,session:AsyncSession=Depends(get_session), token_details=Depends(accesstokenbearer)):
     book = await book_service.get_a_book(book_uid,session)
     if book:
         return book

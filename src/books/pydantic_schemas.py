@@ -1,15 +1,16 @@
 from pydantic import BaseModel
 import uuid 
+from typing import Optional
 
 class book(BaseModel):
-    uid:uuid.UUID
-    title:str
-    author:str
-    publisher:str
-    published_date:str
-    page_count:int
-    user_uid:uuid.UUID
-    language:str
+    uid: uuid.UUID
+    title: str
+    author: str
+    publisher: str
+    published_date: str
+    page_count: int
+    user_uid: Optional[uuid.UUID] = None  # fix here
+    language: str
     
 
 class createbook(BaseModel):
