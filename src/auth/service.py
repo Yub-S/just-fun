@@ -1,7 +1,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from src.auth.scheme import createuserdata
-from src.auth.model import User
+from src.db.model import User
 from src.auth.utils import generate_password_hash
 
 
