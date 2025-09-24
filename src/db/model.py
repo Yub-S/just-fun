@@ -20,6 +20,9 @@ class User(SQLModel,table=True):
     username:str
     firstname:str
     lastname:str
+    is_verified: bool = Field(
+    sa_column=Column(pg.BOOLEAN, nullable=False, server_default="false")
+)
     email:str
     password_hash:str=Field(exclude=True)
     role: str = Field(sa_column=Column(pg.VARCHAR,nullable=False,server_default="user"))

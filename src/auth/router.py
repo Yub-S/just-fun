@@ -11,6 +11,8 @@ from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer
 from src.db.redis import add_jti_to_blocklist
 from src.auth.dependency import RoleChecker
 from src.mail import create_message, mail
+from src.auth.utils import create_url_safe_token , decode_url_safe_token
+from src.config import Config
 
 auth_router = APIRouter()
 userservice = UserService()
@@ -18,7 +20,7 @@ userservice = UserService()
 role_checker = RoleChecker(["admin", "user"])
 
 # signup
-@auth_router.post("/signup", response_model = user, status_code = status.HTTP_201_CREATED)
+@auth_router.post("/signup", status_code = status.HTTP_201_CREATED)
 async def create_new_user(userdata:createuserdata, session:AsyncSession = Depends(get_session)):
     email = userdata.email
     user_exist = await userservice.user_exits(email,session)
@@ -26,7 +28,21 @@ async def create_new_user(userdata:createuserdata, session:AsyncSession = Depend
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="user already exits")
     user_data =  await userservice.create_user(userdata,session)
-    return user_data
+
+    token = create_url_safe_token({"email":email})
+    link = f"http://{Config.DOMAIN}/api/v1/auth/verify/{token}"
+    html_message = f"""
+    <h1>Verify your email</h1>
+    <p>Please click this <a href = "{link}">link</a> to verify your email</p>"""
+
+    message = create_message(recipients=[email],subject="verify your email",body =html_message)
+
+    await mail.send_message(message)
+
+    return {
+        "message":"Account created! Check email for verification",
+        "user":user_data
+    }
 
 # login 
 @auth_router.post("/login")
