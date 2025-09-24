@@ -44,6 +44,30 @@ async def create_new_user(userdata:createuserdata, session:AsyncSession = Depend
         "user":user_data
     }
 
+@auth_router.get("/verify/{token}")
+async def verify_user(token:str,session:AsyncSession = Depends(get_session)):
+    token_data = decode_url_safe_token(token)
+    user_email = token_data["email"]
+    if user_email:
+        user = await userservice.get_user_by_email(user_email,session)
+
+        if not user:
+            raise HTTPException(status_code = status.HTTP_404_NOT_FOUND)
+
+        return JSONResponse(
+            content = {
+                "message":"Account verified successfully ",
+            },
+            status_code = status.HTTP_200_OK
+        )
+    return JSONResponse(
+        content = {
+            "message":"cannot verify your account"
+        },
+        status_code = status.HTTP_200_OK
+    )
+    
+
 # login 
 @auth_router.post("/login")
 async def login_users(login_data:logindata,session:AsyncSession = Depends(get_session)):
