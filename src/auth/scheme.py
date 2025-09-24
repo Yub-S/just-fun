@@ -38,3 +38,10 @@ class UserBookModel(user):
 
 class EmailModel(BaseModel):
     address:List[str]
+
+class Passwordreset(BaseModel):
+    email:str
+
+class NewPassword(BaseModel):
+    new_password:str
+    confirm_new_password:str

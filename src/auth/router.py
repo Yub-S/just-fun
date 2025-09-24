@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends,status
 from fastapi.exceptions import HTTPException
 from src.auth.service import UserService
 from datetime import timedelta, datetime
-from src.auth.scheme import createuserdata,logindata, user, UserBookModel, EmailModel
+from src.auth.scheme import createuserdata,logindata, user, UserBookModel, EmailModel, Passwordreset, NewPassword
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.auth.utils import verify_password_hash,create_access_token,decode_token
@@ -11,7 +11,7 @@ from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer
 from src.db.redis import add_jti_to_blocklist
 from src.auth.dependency import RoleChecker
 from src.mail import create_message, mail
-from src.auth.utils import create_url_safe_token , decode_url_safe_token
+from src.auth.utils import create_url_safe_token , decode_url_safe_token, generate_password_hash
 from src.config import Config
 
 auth_router = APIRouter()
@@ -47,7 +47,7 @@ async def create_new_user(userdata:createuserdata, session:AsyncSession = Depend
 @auth_router.get("/verify/{token}")
 async def verify_user(token:str,session:AsyncSession = Depends(get_session)):
     token_data = decode_url_safe_token(token)
-    user_email = token_data["email"]
+    user_email = token_data
     if user_email:
         user = await userservice.get_user_by_email(user_email,session)
 
@@ -145,3 +145,72 @@ async def send_mail(email:EmailModel):
     
     await mail.send_message(message)
     return {"message":"email sent successfully "}
+
+
+
+@auth_router.post("/reset-request")
+async def password_reset(email_data:Passwordreset):
+    user_email = email_data.email
+
+    token = create_url_safe_token(user_email)
+
+    link = f"http://{Config.DOMAIN}/api/v1/auth/password-reset/{token}"
+
+    html_request = f""""
+    <h1>Reset Your Password</h1>
+    <p>Please click the link <a href = "{link}">link</a> to change password </p>
+    """
+
+    subject = "Reset Your Password"
+
+    message = create_message(
+        recipients=[user_email],
+        subject=subject,
+        body=html_request
+
+    )
+
+    await mail.send_message(message)
+    return JSONResponse(
+        content = {
+            "message":"Please check your email for instruction to reset your password"
+        },
+        status_code = status.HTTP_200_OK
+    )
+
+@auth_router.post("/password-reset/{token}")
+async def set_new_password(token:str,
+                           passwords: NewPassword,
+                           session:AsyncSession=Depends(get_session)):
+    new_password = passwords.new_password
+    confirmed_password = passwords.confirm_new_password
+
+    if new_password!=confirmed_password:
+        raise HTTPException(
+            detail="Passwords do not match",
+            status_code = status.HTTP_404_BAD_REQUEST
+        )
+    
+    token_data = decode_url_safe_token(token)
+    user_email = token_data
+
+    if user_email:
+        user = await userservice.get_user_by_email(user_email,session)
+        if not user:
+            raise HTTPException(status_code = status.HTTP_404_NOT_FOUND)
+        
+        password_hash = generate_password_hash(new_password)
+
+        return JSONResponse(
+            content = {
+                "message":f"Your new password hash is {password_hash}",
+            },
+            status_code = status.HTTP_200_OK
+        )
+    return JSONResponse(
+        content = {
+            "message":"cannot change password"
+        },
+        status_code = status.HTTP_200_OK
+    )
+
