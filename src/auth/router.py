@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends,status
 from fastapi.exceptions import HTTPException
 from src.auth.service import UserService
 from datetime import timedelta, datetime
-from src.auth.scheme import createuserdata,logindata, user, UserBookModel
+from src.auth.scheme import createuserdata,logindata, user, UserBookModel, EmailModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.auth.utils import verify_password_hash,create_access_token,decode_token
@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from src.auth.dependency import tokenbearer,accesstokenbearer,refreshtokenbearer, get_current_user
 from src.db.redis import add_jti_to_blocklist
 from src.auth.dependency import RoleChecker
-
+from src.mail import create_message, mail
 
 auth_router = APIRouter()
 userservice = UserService()
@@ -90,3 +90,18 @@ async def revoke_token(token_details:dict=Depends(accesstokenbearer())):
 @auth_router.get("/me", response_model=UserBookModel)
 async def get_current_user(user=Depends(get_current_user), _:bool=Depends(role_checker)):
     return user
+
+
+@auth_router.post("/send_mail")
+async def send_mail(email:EmailModel):
+    email_address = email.address
+
+    html = "<h1>welcome to the app</h1>"
+    subject = "welcome to bookly"
+
+    message = create_message(recipients=email_address,
+                             subject=subject,
+                             body=html)
+    
+    await mail.send_message(message)
+    return {"message":"email sent successfully "}

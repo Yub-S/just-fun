@@ -35,3 +35,6 @@ class logindata(BaseModel):
 
 class UserBookModel(user):
     books:List[book]
+
+class EmailModel(BaseModel):
+    address:List[str]
