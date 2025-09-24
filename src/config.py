@@ -6,6 +6,7 @@ class settings(BaseSettings):
     JWT_ALGORITHM:str
     REDIS_HOST:str
     REDIS_PORT:int=6379
+    REDIS_URL:str="redis://localhost:6379/0" # "redis://127.0.0.1:6379/0"
 
     MAIL_USERNAME:str
     MAIL_PASSWORD:str
@@ -26,3 +27,8 @@ class settings(BaseSettings):
 
 # create the object
 Config = settings()
+
+#celery configuration
+broker_url = Config.REDIS_URL
+result_backend = Config.REDIS_URL
+broker_connection_retry_on_startup=True

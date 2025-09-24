@@ -14,6 +14,7 @@ from src.mail import create_message, mail
 from src.auth.utils import create_url_safe_token , decode_url_safe_token, generate_password_hash
 from src.config import Config
 from fastapi import BackgroundTasks
+from src.celery import send_email
 
 
 auth_router = APIRouter()
@@ -40,7 +41,10 @@ async def create_new_user(userdata:createuserdata,bg_task: BackgroundTasks, sess
     message = create_message(recipients=[email],subject="verify your email",body =html_message)
 
     #await mail.send_message(message)
-    bg_task.add_task(mail.send_message,message)
+    # using background tasks to do this operation
+    #bg_task.add_task(mail.send_message,message)
+    # using celery to do this operation
+    send_email.delay(recipients=[email],subject="verify your email",body =html_message)
 
     return {
         "message":"Account created! Check email for verification",

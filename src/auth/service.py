@@ -27,3 +27,4 @@ class UserService:
         session.add(new_user_data)
         await session.commit()
         return new_user_data
+    
