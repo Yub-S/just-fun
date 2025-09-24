@@ -13,6 +13,8 @@ from src.auth.dependency import RoleChecker
 from src.mail import create_message, mail
 from src.auth.utils import create_url_safe_token , decode_url_safe_token, generate_password_hash
 from src.config import Config
+from fastapi import BackgroundTasks
+
 
 auth_router = APIRouter()
 userservice = UserService()
@@ -21,7 +23,7 @@ role_checker = RoleChecker(["admin", "user"])
 
 # signup
 @auth_router.post("/signup", status_code = status.HTTP_201_CREATED)
-async def create_new_user(userdata:createuserdata, session:AsyncSession = Depends(get_session)):
+async def create_new_user(userdata:createuserdata,bg_task: BackgroundTasks, session:AsyncSession = Depends(get_session)):
     email = userdata.email
     user_exist = await userservice.user_exits(email,session)
     if user_exist:
@@ -37,7 +39,8 @@ async def create_new_user(userdata:createuserdata, session:AsyncSession = Depend
 
     message = create_message(recipients=[email],subject="verify your email",body =html_message)
 
-    await mail.send_message(message)
+    #await mail.send_message(message)
+    bg_task.add_task(mail.send_message,message)
 
     return {
         "message":"Account created! Check email for verification",
